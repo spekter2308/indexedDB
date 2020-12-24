@@ -11,71 +11,70 @@ const fileTxt = './inputFiles/results.txt'
 const fileExcel = './inputFiles/devices.csv'
 const outputPath = './resultFile/'
 
+module.exports = {
+    test: () => {
+        return {
+            name: 'test',
+            value: 25,
+            another: [4,3,4,6,7,1]
+        }
+    },
+    myString: () => {
+        return 'some string';
+    }
+}
+
 init();
 async function init() {
     const fileExcelData = await getExcelFileData(fileExcel);
     const fileTxtData = await getTxtFileData(fileTxt);
 
     const devicesByLocation = groupDevicesByLocation(fileExcelData);
-    //const maxLength = groupDevicesByLocation.pop();
-    const devicesValuesByTimestamp = groupDevicesValuesByTimestamp(fileTxtData);
+    const { groupDevicesValuesByTimeRanges, timeRanges } = groupDevicesValuesByTimestamp(fileTxtData);
+    const groupTimeRanges = groupTimeRangesByTimestamps(timeRanges);
 
-    const sortedTimestapms = Array.from(devicesValuesByTimestamp.keys()).sort((a, b) => {return parseInt(a) - parseInt(b)})
-    const timeRanges = groupTimestampsByTimeRange(sortedTimestapms);
-
-    const formattedData = formatData(timeRanges, devicesValuesByTimestamp, devicesByLocation);
+    const formattedData = formatData(groupTimeRanges, groupDevicesValuesByTimeRanges, devicesByLocation);
     generateFile(outputPath, formattedData);
 
-    function formatData(timeGroups, devicesData, groupDevicesByLocation) {
+    function formatData(groupTimeRanges, devicesData, groupDevicesByLocation) {
         const outputData = new Map();
-        for (const [timeGroup, dates] of timeGroups) {
+        for (const timeRange of groupTimeRanges) {
             const devicesDataTable = [['Device', 'Min', 'Max', 'Avg', 'Median']];
-            for (const date of dates) {
-                if (devicesData.has(date)) {
-                    const devicesForDateGroup = devicesData.get(date);
-                    for (const deviceInfo of groupDevicesByLocation) {
-                        if (devicesForDateGroup.has(deviceInfo.id)) {
-                            const deviceValues = devicesForDateGroup.get(deviceInfo.id);
-                            const deviceName = deviceInfo.location + ': ' + deviceInfo.name;
-                            devicesDataTable.push([deviceName, deviceValues.min, deviceValues.max, deviceValues.avg, deviceValues.median])
-                        }
+            if (devicesData.has(timeRange)) {
+                const devicesForDateGroup = devicesData.get(timeRange);
+                for (const deviceInfo of groupDevicesByLocation) {
+                    if (devicesForDateGroup.has(deviceInfo.id)) {
+                        const deviceValues = devicesForDateGroup.get(deviceInfo.id);
+                        const deviceName = deviceInfo.location + ': ' + deviceInfo.name;
+                        devicesDataTable.push([deviceName, deviceValues.min, deviceValues.max, deviceValues.avg, deviceValues.median])
                     }
                 }
             }
-            outputData.set(timeGroup, devicesDataTable);
+            outputData.set(timeRange, devicesDataTable);
         }
         return outputData;
     }
-}
 
-function groupTimestampsByTimeRange(timestamps) {
-    const orderedDatesByGroup = new Map();
-    for (const ts of timestamps) {
-        const timestampWithoutMinutes = new Date(parseInt(ts)).setMinutes(0,0);
-        const timeOutputFormat = getTimeGroupAsString(timestampWithoutMinutes);
-        if (!orderedDatesByGroup.has(timeOutputFormat)) {
-            orderedDatesByGroup.set(timeOutputFormat, [ts]);
+    function groupTimeRangesByTimestamps(dates) {
+        const sortedTimestamps = Array.from(dates.keys()).sort((a, b) => {return parseInt(a) - parseInt(b)});
+        const sortedTimeRanges = [];
+        for (const ts of sortedTimestamps) {
+            sortedTimeRanges.push(dates.get(ts));
         }
-        const dateGroup = orderedDatesByGroup.get(timeOutputFormat);
-        if (!dateGroup.includes(ts)) {
-            dateGroup.push(ts);
-        }
+
+        return sortedTimeRanges;
     }
-
-    return orderedDatesByGroup;
 }
 
 async function generateFile(path, data) {
     let outputText = '';
     for (const [ts, content] of data.entries()) {
-        console.log(ts, content)
-        break
         outputText += ts + "\n";
         outputText += table(content)
+        outputText += "\n";
     }
-    console.log(outputText)
     try {
-        await writeFile(outputPath + 'report.txt', reportData
+        await writeFile(outputPath + 'report.txt', outputText
         );
         console.log("file generated");
     } catch (error) {
@@ -96,7 +95,8 @@ function getTimeGroupAsString(timestamp) {
 }
 
 function groupDevicesValuesByTimestamp(lines) {
-    const result = new Map();
+    const groupDevicesValuesByTimeRanges = new Map();
+    const timeRanges = new Map();
     for (const line of lines) {
         let id, ts, value;
         if (line.trim()[0] === "{") {
@@ -110,12 +110,17 @@ function groupDevicesValuesByTimestamp(lines) {
             ts = parsedLine[1];
             value = parseInt(parsedLine[2]);
         }
-        //add new timestamp
-        if (!result.has(ts)) {
-            result.set(ts, new Map([[id, {min: value, max: value, avg: value, median: value, values: [value]}]]));
+        //create date group
+        const timestampWithoutMinutes = new Date(parseInt(ts)).setMinutes(0,0);
+        const timeOutputFormat = getTimeGroupAsString(timestampWithoutMinutes);
+        if (!groupDevicesValuesByTimeRanges.has(timeOutputFormat)) {
+            //add new timeRange
+            timeRanges.set(timestampWithoutMinutes, timeOutputFormat);
+            //create new time range with device values
+            groupDevicesValuesByTimeRanges.set(timeOutputFormat, new Map([[id, {min: value, max: value, avg: value, median: value, values: [value]}]]));
         }
-        const timestamp = result.get(ts);
-        //add new device to timestamp
+        const timestamp = groupDevicesValuesByTimeRanges.get(timeOutputFormat);
+        //add new device to time range
         if (!timestamp.has(id)) {
             timestamp.set(id, {min: value, max: value, avg: value, median: value, values: [value]});
         }
@@ -128,7 +133,7 @@ function groupDevicesValuesByTimestamp(lines) {
         deviceValues.median = median(deviceValues.values);
         deviceValues.avg = average(deviceValues.avg, value, deviceValues.values.length);
     }
-    return result;
+    return { groupDevicesValuesByTimeRanges, timeRanges };
 
     function insertDeviceValue(arr, min, max, value) {
         const values = arr;
@@ -167,15 +172,12 @@ function groupDevicesValuesByTimestamp(lines) {
 
 function groupDevicesByLocation(rows) {
     const result = [];
-    //let maxLength = 0;
     for (const row of rows) {
         const locLen = row[2].length;
         const nameLen = row[1].length;
-        //maxLength = locLen + nameLen > maxLength ? locLen + nameLen : maxLength;
         result.push({location: row[2], id: row[0], name: row[1]});
     }
     const sorted = result.sort((a, b) => (a.location > b.location ? 1 : -1));
-    //sorted.push({maxLength})
     return sorted;
 }
 
