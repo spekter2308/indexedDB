@@ -12,20 +12,24 @@ const fileExcel = './inputFiles/devices.csv'
 const outputPath = './resultFile/'
 
 module.exports = {
-    test: () => {
-        return {
-            name: 'test',
-            value: 25,
-            another: [4,3,4,6,7,1]
-        }
+    reportDataJson: async () => {
+        const responseData = formattedResponseJsonData();
+        return responseData;
     },
-    myString: () => {
-        return 'some string';
-    }
 }
 
-init();
-async function init() {
+formattedResponseJsonData();
+async function formattedResponseJsonData() {
+    const jsonData = {};
+    const data = await prepareDataToGenerate();
+    for (const [date, devices] of data) {
+        jsonData[date] = devices;
+    }
+    return jsonData;
+}
+
+//generateFile();
+async function prepareDataToGenerate() {
     const fileExcelData = await getExcelFileData(fileExcel);
     const fileTxtData = await getTxtFileData(fileTxt);
 
@@ -34,7 +38,8 @@ async function init() {
     const groupTimeRanges = groupTimeRangesByTimestamps(timeRanges);
 
     const formattedData = formatData(groupTimeRanges, groupDevicesValuesByTimeRanges, devicesByLocation);
-    generateFile(outputPath, formattedData);
+
+    return formattedData;
 
     function formatData(groupTimeRanges, devicesData, groupDevicesByLocation) {
         const outputData = new Map();
@@ -66,7 +71,8 @@ async function init() {
     }
 }
 
-async function generateFile(path, data) {
+async function generateFile() {
+    const data = await prepareDataToGenerate();
     let outputText = '';
     for (const [ts, content] of data.entries()) {
         outputText += ts + "\n";
