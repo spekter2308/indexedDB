@@ -10,7 +10,6 @@
 </template>
 
 <script>
-/* eslint-disable */
 import Report from './views/Report'
 export default {
     name: 'App',

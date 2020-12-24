@@ -9,9 +9,8 @@
 </template>
 
 <script>
-    /* eslint-disable */
     export default {
-        name: "Report",
+        name: 'Report',
         props: {
             devices: {
                 type: Array
