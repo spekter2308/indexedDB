@@ -18,7 +18,6 @@ module.exports = {
     },
 }
 
-formattedResponseJsonData();
 async function formattedResponseJsonData() {
     const jsonData = {};
     const data = await prepareDataToGenerate();
@@ -28,7 +27,7 @@ async function formattedResponseJsonData() {
     return jsonData;
 }
 
-//generateFile();
+generateFile();
 async function prepareDataToGenerate() {
     const fileExcelData = await getExcelFileData(fileExcel);
     const fileTxtData = await getTxtFileData(fileTxt);
