@@ -1,0 +1,55 @@
+body {
+    font-family: 'Brush Script MT', cursive;
+}
+.wrapper {
+    min-width: 500px;
+    margin: 50px auto;
+    overflow: auto;
+}
+.date {
+    margin: 50px 0 0 20px;
+}
+.device-info {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    width: inherit;
+    margin: 20px;
+}
+.device-info div {
+    display: flex;
+    justify-content: center;
+    word-wrap: break-word;
+    border-left: 2px solid #111111;
+    padding-left: 10px;
+}
+.device-info div {
+    width: 15%;
+}
+.device-info div:first-child {
+    justify-content: start;
+    width: 40%;
+}
+.device-info div:last-child {
+    border-right: 2px solid #111111;
+}
+@media screen and (min-width: 576px) {
+    .wrapper {
+        width: 500px;
+    }
+}
+@media screen and (min-width: 768px) {
+    .wrapper {
+        width: 610px;
+    }
+}
+@media screen and (min-width: 992px) {
+    .wrapper {
+        width: 800px;
+    }
+}
+@media screen and (min-width: 1200px) {
+    .wrapper {
+        width: 1140px;
+    }
+}

@@ -1,11 +1,19 @@
 const http = require('http');
-const reportData = require('./index.js');
+const { formattedData } = require('./lib/index.js')
 
+async function formattedResponseJsonData() {
+    const jsonData = {};
+    const data = await formattedData();
+    for (const [date, devices] of data) {
+        jsonData[date] = devices;
+    }
+    return jsonData;
+}
 async function onRequest(request, response) {
-    response.writeHead(200, {'Content-Type': 'application/json'});
-    //response.write(test.test());
-    //console.log(reportData.reportDataJson())
-    const data = await reportData.reportDataJson();
+    console.log('handling...')
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    const data = await formattedResponseJsonData();
     response.end(JSON.stringify(data));
 }
 
