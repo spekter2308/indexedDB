@@ -11,11 +11,12 @@
 3) files with start data located in ./inputFiles folder (by default there are 2 files: result.txt(201 960 lines) and devices.csv (4 lines))
 4) if necessary replace this files with new files
 5) result file located in ./resultFile (report.txt)
-6) at root project folder (InfluencerDB) run `node index.js`
+6) at root project folder (InfluencerDB) run `node generate.js`
+7) after message in terminal 'file generated' -> check report.txt
 
 # 2 task
-1) at root folder run `node server.js`
-2) go to folder 'client' => run `cd client`
+1) at root folder (InfluencerDB) run `node server.js`
+2) open ane more terminal for project and from root folder go to folder 'client' (run `cd client`)
 3) run `npm install`
 4) run `npm run start`
 5) go to browser 'http://localhost:8080/' and wait generated data
